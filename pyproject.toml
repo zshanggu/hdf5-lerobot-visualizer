@@ -1,0 +1,24 @@
+[project]
+name = "libero-hdf5-viewer"
+version = "0.1.0"
+description = "Qt GUI for browsing and visualizing LIBERO robot demonstration HDF5 datasets"
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6>=6.6,<7",
+    "h5py>=3.10",
+    "numpy>=1.24",
+    "matplotlib>=3.8",
+    "pyarrow>=14",
+    "Pillow>=10",
+    "opencv-python-headless>=4.8",
+]
+
+[project.scripts]
+libero-viewer = "libero_viewer.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

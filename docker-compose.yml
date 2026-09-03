@@ -1,0 +1,25 @@
+services:
+  libero-viewer:
+    build: .
+    image: libero-hdf5-viewer:latest
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_QPA_PLATFORM=xcb
+      # Path to open on launch. Must be the same absolute host path used
+      # below for MOUNT_ROOT (or a subdirectory of it) -- the container
+      # sees this directory tree at the identical path as the host, so
+      # File > Open File.../Open Folder... can browse anywhere under it.
+      - LIBERO_DATA_DIR=${LIBERO_DATA_DIR:-/data/zeyu/PHD_LAB/Amazon_Project/libero_100/libero_90}
+      - HOME=/home/viewer
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Bind-mounted at the SAME path inside the container as on the host
+      # (identity mount), so file dialogs show real, navigable host paths
+      # instead of a remapped /data.
+      - ${MOUNT_ROOT:-/data/zeyu/PHD_LAB/Amazon_Project}:${MOUNT_ROOT:-/data/zeyu/PHD_LAB/Amazon_Project}:ro
+      # Persists the app's "last opened folder" (and other Qt settings)
+      # across container runs. Run `mkdir -p .viewer-settings && chmod 777
+      # .viewer-settings` once before first use (see run_docker.sh).
+      - ./.viewer-settings:/home/viewer/.config/libero-viewer:rw
+    network_mode: host
+    ipc: host
