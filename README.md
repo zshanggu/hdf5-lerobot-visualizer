@@ -87,7 +87,7 @@ footprint light.
 Requires Python 3.10+ and a working display (this is a desktop GUI app, not a web app).
 
 ```bash
-cd libero_hdf5_viewer
+cd hdf5-lerobot-visualizer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -140,7 +140,7 @@ you last opened something even after the container has been removed and relaunch
 ### Quick start
 
 ```bash
-cd libero_hdf5_viewer
+cd hdf5-lerobot-visualizer
 ./run_docker.sh [path-to-open-on-launch] [mount-root]
 
 # e.g. open libero_90 directly, with the whole Amazon_Project tree browsable:
@@ -156,8 +156,8 @@ at the identical path inside the container.
 ### Manual steps
 
 ```bash
-cd libero_hdf5_viewer
-docker build -t libero-hdf5-viewer .
+cd hdf5-lerobot-visualizer
+docker build -t hdf5-lerobot-visualizer .
 
 xhost +local:docker   # allow the container to connect to your X server
 
@@ -171,13 +171,13 @@ docker run --rm -it \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -v "$MOUNT_ROOT:$MOUNT_ROOT:ro" \
     -v "$(pwd)/.viewer-settings:/home/viewer/.config/libero-viewer:rw" \
-    libero-hdf5-viewer
+    hdf5-lerobot-visualizer
 ```
 
 ### Or with docker compose
 
 ```bash
-cd libero_hdf5_viewer
+cd hdf5-lerobot-visualizer
 mkdir -p .viewer-settings && chmod 777 .viewer-settings
 MOUNT_ROOT=/data/zeyu/PHD_LAB/Amazon_Project \
 LIBERO_DATA_DIR=/data/zeyu/PHD_LAB/Amazon_Project/libero_100/libero_90 \
@@ -197,7 +197,7 @@ LIBERO_DATA_DIR=/data/zeyu/PHD_LAB/Amazon_Project/libero_100/libero_90 \
 ## Project layout
 
 ```
-libero_hdf5_viewer/
+hdf5-lerobot-visualizer/
 ├── src/libero_viewer/
 │   ├── sources.py         # Shared Task/DemoRef/Episode types + format auto-detection & dispatch
 │   ├── data_model.py      # HDF5 backend: directory scan (metadata only) + per-episode loading
@@ -245,7 +245,7 @@ docker run --rm \
     -v /path/to/libero_90:/data:ro \
     -v "$(pwd)/tests/smoke_test.py:/app/smoke_test.py:ro" \
     --entrypoint python3 \
-    libero-hdf5-viewer:latest /app/smoke_test.py
+    hdf5-lerobot-visualizer:latest /app/smoke_test.py
 ```
 
 If you also mount a LeRobot dataset root at `/lerobot_test`, the same run additionally opens
@@ -259,5 +259,5 @@ docker run --rm \
     -v /path/to/a/lerobot_dataset_root:/lerobot_test:ro \
     -v "$(pwd)/tests/smoke_test.py:/app/smoke_test.py:ro" \
     --entrypoint python3 \
-    libero-hdf5-viewer:latest /app/smoke_test.py
+    hdf5-lerobot-visualizer:latest /app/smoke_test.py
 ```

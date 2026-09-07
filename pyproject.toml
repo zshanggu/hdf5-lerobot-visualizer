@@ -1,7 +1,7 @@
 [project]
-name = "libero-hdf5-viewer"
+name = "hdf5-lerobot-visualizer"
 version = "0.1.0"
-description = "Qt GUI for browsing and visualizing LIBERO robot demonstration HDF5 datasets"
+description = "Qt GUI for browsing and visualizing LIBERO HDF5 and LeRobot robot demonstration datasets"
 requires-python = ">=3.10"
 dependencies = [
     "PySide6>=6.6,<7",

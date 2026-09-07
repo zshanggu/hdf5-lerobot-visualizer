@@ -1,7 +1,7 @@
 services:
   libero-viewer:
     build: .
-    image: libero-hdf5-viewer:latest
+    image: hdf5-lerobot-visualizer:latest
     environment:
       - DISPLAY=${DISPLAY}
       - QT_QPA_PLATFORM=xcb

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build (if needed) and run the LIBERO HDF5 Viewer in Docker with X11
-# forwarding to the host display.
+# Build (if needed) and run the LIBERO / LeRobot Data Viewer in Docker with
+# X11 forwarding to the host display.
 #
 # Usage:
 #   ./run_docker.sh [path-to-open-on-launch] [mount-root]
@@ -44,7 +44,7 @@ SETTINGS_DIR="$SCRIPT_DIR/.viewer-settings"
 mkdir -p "$SETTINGS_DIR"
 chmod 777 "$SETTINGS_DIR"
 
-IMAGE_TAG="libero-hdf5-viewer:latest"
+IMAGE_TAG="hdf5-lerobot-visualizer:latest"
 docker build -t "$IMAGE_TAG" "$SCRIPT_DIR"
 
 xhost +local:docker >/dev/null 2>&1 || echo "warning: xhost not available; X11 access may fail"
