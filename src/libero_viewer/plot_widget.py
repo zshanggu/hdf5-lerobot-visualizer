@@ -6,6 +6,8 @@ from matplotlib.figure import Figure
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
+from .subskill_boundaries import color_for_skill
+
 
 class TrajectoryPlot(QWidget):
     """Matplotlib line plot of a chosen signal over time, with a frame cursor.
@@ -25,6 +27,7 @@ class TrajectoryPlot(QWidget):
         self._cursor_line = None
         self._episode = None
         self._signal_name: str | None = None
+        self._boundaries: list[dict] | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -42,6 +45,12 @@ class TrajectoryPlot(QWidget):
         self.signals_changed.emit(names)
         self._redraw()
 
+    def set_boundaries(self, boundaries: list[dict] | None) -> None:
+        """Shades the plot background by sub-skill (see subskill_boundaries.py);
+        pass None to clear (e.g. no annotation file covers this demo)."""
+        self._boundaries = boundaries
+        self._redraw()
+
     def _redraw(self) -> None:
         self._ax.clear()
         self._cursor_line = None
@@ -55,6 +64,18 @@ class TrajectoryPlot(QWidget):
 
         data, labels = self._episode.signals[self._signal_name]
         t = np.arange(data.shape[0]) / max(self._episode.fps, 1e-6)
+
+        if self._boundaries:
+            fps = max(self._episode.fps, 1e-6)
+            for b in self._boundaries:
+                self._ax.axvspan(
+                    b["start_frame"] / fps,
+                    (b["end_frame"] + 1) / fps,
+                    color=color_for_skill(b["skill_idx"]).name(),
+                    alpha=0.15,
+                    linewidth=0,
+                )
+
         for dim in range(data.shape[1]):
             label = labels[dim] if dim < len(labels) else f"dim{dim}"
             self._ax.plot(t, data[:, dim], label=label, linewidth=1.2)

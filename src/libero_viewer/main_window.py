@@ -23,9 +23,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from . import sources
+from . import sources, subskill_boundaries
 from .player import Player
 from .plot_widget import TrajectoryPlot
+from .subskill_timeline import SubskillTimeline
 from .video_widget import CameraView
 from .workers import LoadEpisodeWorker, ScanWorker
 
@@ -50,6 +51,13 @@ class MainWindow(QMainWindow):
         self._current_episode: sources.Episode | None = None
         self._scan_worker: ScanWorker | None = None
         self._load_worker: LoadEpisodeWorker | None = None
+
+        # Optional sub-skill boundary overlay (see subskill_boundaries.py):
+        # the whole parsed subskill_boundaries.json for the currently open
+        # directory (None if absent/not applicable), and the current demo's
+        # slice of it (also None -- e.g. LeRobot sources aren't covered).
+        self._subskill_boundaries_file: dict | None = None
+        self._current_boundaries: list[dict] | None = None
 
         self._settings = QSettings(_SETTINGS_ORG, _SETTINGS_APP)
         self._last_opened_dir: str | None = self._settings.value(_SETTINGS_KEY_LAST_DIR, type=str) or None
@@ -146,6 +154,13 @@ class MainWindow(QMainWindow):
         self._instruction_label.setStyleSheet("font-size: 14px; font-weight: 600;")
         layout.addWidget(self._instruction_label)
 
+        # Only shown when a subskill_boundaries.json covers the current demo
+        # (see subskill_boundaries.py) -- hidden otherwise.
+        self._current_skill_label = QLabel("", panel)
+        self._current_skill_label.setStyleSheet("font-size: 12px; color: #0072B2; font-weight: 600;")
+        self._current_skill_label.setVisible(False)
+        layout.addWidget(self._current_skill_label)
+
         video_row = QHBoxLayout()
         self._primary_view = CameraView(parent=panel)
         self._wrist_view = CameraView(parent=panel)
@@ -176,6 +191,9 @@ class MainWindow(QMainWindow):
     def _build_transport_controls(self) -> QWidget:
         box = QGroupBox("Playback", self)
         layout = QVBoxLayout(box)
+
+        self._subskill_timeline = SubskillTimeline(box)
+        layout.addWidget(self._subskill_timeline)
 
         slider_row = QHBoxLayout()
         self._frame_label = QLabel("0 / 0", box)
@@ -248,6 +266,7 @@ class MainWindow(QMainWindow):
 
     def _on_scan_finished(self, tasks: list[sources.Task]) -> None:
         self._tasks = tasks
+        self._subskill_boundaries_file = None
         if not tasks:
             self._dir_label.setText("No LIBERO HDF5 files or LeRobot dataset found")
         else:
@@ -256,6 +275,8 @@ class MainWindow(QMainWindow):
             self._dir_label.setText(f"{root}  ({kind_label}, {len(tasks)} task(s))")
             self._last_opened_dir = str(root)
             self._settings.setValue(_SETTINGS_KEY_LAST_DIR, self._last_opened_dir)
+            if tasks[0].kind is sources.SourceKind.HDF5:
+                self._subskill_boundaries_file = subskill_boundaries.load_boundaries_file(root)
         self.statusBar().showMessage(f"Loaded {len(tasks)} task(s)")
         self._apply_task_filter(self._task_filter.text())
 
@@ -309,6 +330,14 @@ class MainWindow(QMainWindow):
         self._frame_slider.setMaximum(max(episode.num_steps - 1, 0))
         self._player.configure(episode.num_steps, episode.fps)
 
+        hdf5_name = episode.task.backend_ref.name if episode.task.kind is sources.SourceKind.HDF5 else None
+        self._current_boundaries = (
+            subskill_boundaries.lookup(self._subskill_boundaries_file, hdf5_name, episode.key) if hdf5_name else None
+        )
+        self._subskill_timeline.set_episode(episode.num_steps, self._current_boundaries)
+        self._plot.set_boundaries(self._current_boundaries)
+        self._update_current_skill_label(0)
+
         self._primary_view.set_title(episode.primary_label)
         if episode.wrist_rgb is not None:
             self._wrist_view.set_title(episode.wrist_label or "wrist")
@@ -351,3 +380,14 @@ class MainWindow(QMainWindow):
         if episode.wrist_rgb is not None:
             self._wrist_view.set_frame(episode.wrist_rgb[index])
         self._plot.set_frame_index(index)
+        self._subskill_timeline.set_frame_index(index)
+        self._update_current_skill_label(index)
+
+    def _update_current_skill_label(self, index: int) -> None:
+        skill = subskill_boundaries.skill_at_frame(self._current_boundaries, index)
+        if skill is None:
+            self._current_skill_label.setVisible(False)
+            return
+        note = " (boundary uncertain)" if skill.get("detection_failed") else ""
+        self._current_skill_label.setText(f"Sub-skill {skill['skill_idx']}/4: {skill['prompt']}{note}")
+        self._current_skill_label.setVisible(True)
