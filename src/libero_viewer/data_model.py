@@ -107,11 +107,15 @@ def load_episode(task: Task, demo_key: str) -> Episode:
         demo = f["data"][demo_key]
         num_steps = int(demo["actions"].shape[0])
 
-        # LIBERO renders camera images with MuJoCo's OpenGL offscreen renderer,
-        # whose row order is bottom-to-top, so frames need a vertical flip to
-        # display right-side-up.
-        agentview_rgb = np.ascontiguousarray(demo["obs"]["agentview_rgb"][()][:, ::-1])
-        eye_in_hand_rgb = np.ascontiguousarray(demo["obs"]["eye_in_hand_rgb"][()][:, ::-1])
+        # Raw HDF5 agentview_rgb/eye_in_hand_rgb arrays are the direct, unmodified MuJoCo
+        # render buffers (third_party/libero/scripts/create_dataset.py stores them with no
+        # flip of its own), in the same raw orientation zeyu_openpi's examples/libero/main.py
+        # corrects at inference time via obs["agentview_image"][::-1, ::-1] -- both axes (H
+        # and W), not just one. These arrays are batched ([T, H, W, 3]), so the per-frame H/W
+        # axes here are 1/2, not 0/1 -- flipping only axis 1 (as an earlier version of this
+        # code did) is a vertical-only flip, upside down relative to the correct orientation.
+        agentview_rgb = np.ascontiguousarray(demo["obs"]["agentview_rgb"][()][:, ::-1, ::-1])
+        eye_in_hand_rgb = np.ascontiguousarray(demo["obs"]["eye_in_hand_rgb"][()][:, ::-1, ::-1])
 
         signals: dict[str, tuple[np.ndarray, list[str]]] = {}
         for display_name, dataset_path, labels in _SIGNAL_SPECS:
